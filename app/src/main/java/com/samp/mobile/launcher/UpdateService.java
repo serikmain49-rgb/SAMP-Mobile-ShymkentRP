@@ -140,6 +140,7 @@ public class UpdateService extends Service {
         Volley.newRequestQueue(getApplicationContext()).add(new StringRequest("https://samp-mobile.shop/client_config.json", new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
+                new Thread(() -> {
                 try {
                     mUpdateFiles = new ArrayList<>();
                     mUpdateFilesName = new ArrayList<>();
@@ -163,8 +164,11 @@ public class UpdateService extends Service {
                     setUpdateStatus(UpdateActivity.UpdateStatus.Undefined);
 
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    Log.e("UpdateService", "Could not read game file list", e);
+                    mGameStatus = UpdateActivity.GameStatus.Unknown;
+                    setUpdateStatus(UpdateActivity.UpdateStatus.Undefined);
                 }
+                }).start();
             }
         }, new Response.ErrorListener() {
             @Override
@@ -188,6 +192,7 @@ public class UpdateService extends Service {
     }
 
     public void getFilesInfo(String response) throws JSONException {
+        Util.responseFilesInt = 0;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -197,6 +202,8 @@ public class UpdateService extends Service {
                 try {
                     URL url = new URL(response);
                     connection = (HttpURLConnection) url.openConnection();
+                    connection.setConnectTimeout(10000);
+                    connection.setReadTimeout(10000);
                     connection.connect();
 
 
@@ -238,7 +245,7 @@ public class UpdateService extends Service {
             }
         }
 
-        if(i5 == 2) return;
+        if(i5 == 2) throw new JSONException("Game file list unavailable");
 
         Log.d("x1y2z", "Info: " + Util.responseFiles);
         JSONObject jsonObject = new JSONObject(Util.responseFiles);
