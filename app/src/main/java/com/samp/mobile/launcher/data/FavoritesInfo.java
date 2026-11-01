@@ -23,6 +23,11 @@ public class FavoritesInfo {
         File file = new File(mContext.getExternalFilesDir(null), "SAMP/favorites.json");
         if (!file.exists()) {
             ClearFavorites();
+            // Seed the server only when the favorites file does not yet exist.
+            // Once saved, the player can remove it or add other servers normally.
+            serverList.add(new FavoriteServerData(0, 0, "188.127.241.74", 3757));
+            bLoaded = true;
+            Save(mContext);
             return;
         }
         try {
