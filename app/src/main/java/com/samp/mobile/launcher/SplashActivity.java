@@ -75,11 +75,7 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        if(!SignatureChecker.isSignatureValid(this, getPackageName()))
         {
-            ((TextView)findViewById(R.id.launcher_orig_text)).setText("Using not original launcher");
-        }
-        else {
             Config.currentContext = this;
 
             prefs = getSharedPreferences("com.samp.mobile", MODE_PRIVATE);
@@ -128,13 +124,11 @@ public class SplashActivity extends AppCompatActivity {
                     Log.e("x1y2z", "GPU name: " + glGetString);
                     Log.e("x1y2z", "GPU type: " + egputype.name());
 
-                    if (isPermissionsGranted()) {
-                        mIsBind = bindService(new Intent(SplashActivity.this, UpdateService.class), mConnection, Context.BIND_AUTO_CREATE);
-                    } else {
-                        ActivityCompat.requestPermissions(SplashActivity.this,
-                                permissions,
-                                1);
-                    }
+                    runOnUiThread(() -> {
+                        if (!mIsBind && !isFinishing()) {
+                            mIsBind = bindService(new Intent(SplashActivity.this, UpdateService.class), mConnection, Context.BIND_AUTO_CREATE);
+                        }
+                    });
                 }
 
                 @Override
