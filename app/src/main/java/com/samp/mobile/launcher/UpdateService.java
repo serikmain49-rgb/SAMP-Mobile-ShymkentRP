@@ -153,16 +153,11 @@ public class UpdateService extends Service {
 
                     getFilesInfo(string);
 
-                    if (!isGameUpdateExists()) {
-                        if (mUpdateFiles.isEmpty()) {
-                            mGameStatus = UpdateActivity.GameStatus.Updated;
-                        }
-                        else {
-                            mGameStatus = UpdateActivity.GameStatus.UpdateRequired;
-                        }
-                    }
-                    else {
-                        mGameStatus = UpdateActivity.GameStatus.GameUpdateRequired;
+                    // The upstream launcher APK is not an update for this fork.
+                    if (mUpdateFiles.isEmpty()) {
+                        mGameStatus = UpdateActivity.GameStatus.Updated;
+                    } else {
+                        mGameStatus = UpdateActivity.GameStatus.UpdateRequired;
                     }
 
                     setUpdateStatus(UpdateActivity.UpdateStatus.Undefined);
@@ -257,7 +252,7 @@ public class UpdateService extends Service {
                         if (!fileData.getName().equals("settings.ini")) {
                             String str = getExternalFilesDir(null) + "/";
                             File file = new File(str + fileData.getPath());
-                            if (!file.exists() || file.length() != fileData.getSize()) {
+                            if (!file.exists()) {
                                 if(!fileData.getPath().contains("player") && !fileData.getPath().contains("playerhi") && !fileData.getPath().contains("menu") && !fileData.getPath().contains("samp")) {
                                     if ((fileData.getPath().contains(".dxt.") && mGpuType != 1))
                                         continue;
@@ -369,8 +364,10 @@ public class UpdateService extends Service {
 
             File file = new File(getExternalFilesDir(null), string);
             file.getParentFile().mkdirs();
+            // Never overwrite an existing game file.
             if (file.exists()) {
-                file.delete();
+                intRef.element++;
+                continue;
             }
 
             Ref.LongRef longRef = new Ref.LongRef();
