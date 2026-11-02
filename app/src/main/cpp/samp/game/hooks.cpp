@@ -1848,7 +1848,8 @@ void InstallSpecialHooks()
 {
     InjectHooks();
 
-    InstallUrezHooks();
+    // Preserve PVR texture paths used by the installed game data.
+    // Rewriting them to DXT causes missing-file crashes with the original cache.
 
 	//InstallCRHooks(); //call this when using the CRMP cache
 

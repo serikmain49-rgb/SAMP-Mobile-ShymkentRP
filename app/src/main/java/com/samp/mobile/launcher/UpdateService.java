@@ -140,6 +140,7 @@ public class UpdateService extends Service {
         Volley.newRequestQueue(getApplicationContext()).add(new StringRequest("https://samp-mobile.shop/client_config.json", new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
+                new Thread(() -> {
                 try {
                     mUpdateFiles = new ArrayList<>();
                     mUpdateFilesName = new ArrayList<>();
@@ -153,23 +154,21 @@ public class UpdateService extends Service {
 
                     getFilesInfo(string);
 
-                    if (!isGameUpdateExists()) {
-                        if (mUpdateFiles.isEmpty()) {
-                            mGameStatus = UpdateActivity.GameStatus.Updated;
-                        }
-                        else {
-                            mGameStatus = UpdateActivity.GameStatus.UpdateRequired;
-                        }
-                    }
-                    else {
-                        mGameStatus = UpdateActivity.GameStatus.GameUpdateRequired;
+                    // The upstream launcher APK is not an update for this fork.
+                    if (mUpdateFiles.isEmpty()) {
+                        mGameStatus = UpdateActivity.GameStatus.Updated;
+                    } else {
+                        mGameStatus = UpdateActivity.GameStatus.UpdateRequired;
                     }
 
                     setUpdateStatus(UpdateActivity.UpdateStatus.Undefined);
 
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    Log.e("UpdateService", "Could not read game file list", e);
+                    mGameStatus = UpdateActivity.GameStatus.Unknown;
+                    setUpdateStatus(UpdateActivity.UpdateStatus.Undefined);
                 }
+                }).start();
             }
         }, new Response.ErrorListener() {
             @Override
@@ -193,6 +192,7 @@ public class UpdateService extends Service {
     }
 
     public void getFilesInfo(String response) throws JSONException {
+        Util.responseFilesInt = 0;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -202,6 +202,8 @@ public class UpdateService extends Service {
                 try {
                     URL url = new URL(response);
                     connection = (HttpURLConnection) url.openConnection();
+                    connection.setConnectTimeout(10000);
+                    connection.setReadTimeout(10000);
                     connection.connect();
 
 
@@ -243,7 +245,7 @@ public class UpdateService extends Service {
             }
         }
 
-        if(i5 == 2) return;
+        if(i5 == 2) throw new JSONException("Game file list unavailable");
 
         Log.d("x1y2z", "Info: " + Util.responseFiles);
         JSONObject jsonObject = new JSONObject(Util.responseFiles);
@@ -257,7 +259,7 @@ public class UpdateService extends Service {
                         if (!fileData.getName().equals("settings.ini")) {
                             String str = getExternalFilesDir(null) + "/";
                             File file = new File(str + fileData.getPath());
-                            if (!file.exists() || file.length() != fileData.getSize()) {
+                            if (!file.exists()) {
                                 if(!fileData.getPath().contains("player") && !fileData.getPath().contains("playerhi") && !fileData.getPath().contains("menu") && !fileData.getPath().contains("samp")) {
                                     if ((fileData.getPath().contains(".dxt.") && mGpuType != 1))
                                         continue;
@@ -369,8 +371,10 @@ public class UpdateService extends Service {
 
             File file = new File(getExternalFilesDir(null), string);
             file.getParentFile().mkdirs();
+            // Never overwrite an existing game file.
             if (file.exists()) {
-                file.delete();
+                intRef.element++;
+                continue;
             }
 
             Ref.LongRef longRef = new Ref.LongRef();

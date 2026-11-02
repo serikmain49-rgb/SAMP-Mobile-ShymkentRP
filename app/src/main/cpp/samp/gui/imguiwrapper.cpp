@@ -57,8 +57,28 @@ bool ImGuiWrapper::initialize()
 		0
     };
 	
-	ImFont* font = io.Fonts->AddFontFromFileTTF(m_fontPath.c_str(),
-		UISettings::fontSize(), &fontCfg, ranges);
+	// ImGui asserts if a requested font file is absent. Use Android's
+	// system font when the optional game cache font is missing or empty.
+	const char* fontPath = m_fontPath.c_str();
+	FILE* fontFile = fopen(fontPath, "rb");
+	bool hasFont = false;
+	if (fontFile) {
+		if (fseek(fontFile, 0, SEEK_END) == 0) hasFont = ftell(fontFile) > 0;
+		fclose(fontFile);
+	}
+	if (!hasFont) {
+		FLog("UI font missing or empty; trying Android system font");
+		fontPath = "/system/fonts/Roboto-Regular.ttf";
+		fontFile = fopen(fontPath, "rb");
+		if (fontFile) {
+			if (fseek(fontFile, 0, SEEK_END) == 0) hasFont = ftell(fontFile) > 0;
+			fclose(fontFile);
+		}
+	}
+	const float fontSize = UISettings::fontSize() > 0.0f ? UISettings::fontSize() : 30.0f;
+	ImFont* font = hasFont
+		? io.Fonts->AddFontFromFileTTF(fontPath, fontSize, &fontCfg, ranges)
+		: io.Fonts->AddFontDefault();
 
 	if (font == nullptr)
 	{

@@ -100,10 +100,6 @@ public class MainActivity extends AppCompatActivity {
         //}
 
 
-        File file = new File(getExternalFilesDir(null) + "/download/update.apk");
-        if (file.exists()) {
-            file.delete();
-        }
 
         FragmentManager fm = getSupportFragmentManager();
         ViewPagerAdapter sa = new ViewPagerAdapter(fm);
